@@ -1,0 +1,148 @@
+{
+  "name": "backlog-explorer",
+  "displayName": "Backlog Explorer",
+  "description": "Parse and display the contents of a .backlog folder — tasks, epics, and sprints — in a sidebar tree with a rich detail view.",
+  "version": "0.1.0",
+  "publisher": "backlog-tools",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "backlog",
+    "tasks",
+    "project-management",
+    "agile",
+    "frontmatter"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "backlog",
+          "title": "Backlog",
+          "icon": "media/backlog.svg"
+        }
+      ]
+    },
+    "views": {
+      "backlog": [
+        {
+          "id": "backlog.tree",
+          "name": "Backlog",
+          "icon": "media/backlog.svg"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "backlog.refresh",
+        "title": "Refresh",
+        "category": "Backlog",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "backlog.search",
+        "title": "Search Tasks",
+        "category": "Backlog",
+        "icon": "$(search)"
+      },
+      {
+        "command": "backlog.filterState",
+        "title": "Filter by Status/Priority",
+        "category": "Backlog",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "backlog.clearFilter",
+        "title": "Clear Filters",
+        "category": "Backlog",
+        "icon": "$(close)"
+      },
+      {
+        "command": "backlog.openDetail",
+        "title": "Open Detail View",
+        "category": "Backlog"
+      },
+      {
+        "command": "backlog.openFile",
+        "title": "Open Task File",
+        "category": "Backlog"
+      },
+      {
+        "command": "backlog.openDashboard",
+        "title": "Open Dashboard (backlog.md)",
+        "category": "Backlog"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "backlog.refresh",
+          "when": "view == backlog.tree",
+          "group": "navigation@0"
+        },
+        {
+          "command": "backlog.search",
+          "when": "view == backlog.tree",
+          "group": "navigation@1"
+        },
+        {
+          "command": "backlog.filterState",
+          "when": "view == backlog.tree",
+          "group": "navigation@2"
+        },
+        {
+          "command": "backlog.clearFilter",
+          "when": "view == backlog.tree && backlog.filterActive",
+          "group": "navigation@3"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "backlog.clearFilter",
+          "when": "backlog.filterActive"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "backlog.openDetail",
+          "when": "view == backlog.tree && viewItem =~ /^(task|epic|sprint)$/",
+          "group": "inline"
+        },
+        {
+          "command": "backlog.openFile",
+          "when": "view == backlog.tree && viewItem =~ /^(task|epic|sprint)$/",
+          "group": "inline"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "build": "node esbuild.js",
+    "test": "bun test",
+    "start": "node preview/server.mjs",
+    "preview": "node preview/server.mjs",
+    "preview:smoke": "node preview/smoke.mjs",
+    "package": "vsce package --no-dependencies --allow-missing-repository",
+    "vscode:prepublish": "node esbuild.js"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "@types/node": "^22.10.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7.0",
+    "yaml": "^2.6.0"
+  }
+}
