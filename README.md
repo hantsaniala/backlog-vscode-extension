@@ -17,6 +17,17 @@ network calls. It just reads markdown files with YAML frontmatter.
   every parsed field: status, type, priority, severity, assignee, labels,
   components, story points, dates, and dependency relations (`depends_on`,
   `blocks`, `related_to`, children). Related items are clickable.
+- **Tree search** — filter the sidebar by task ID, summary, or label. Click the
+  search icon (or run **Backlog: Search Tasks**) and type: the tree updates live,
+  status groups show matching/total counts (e.g. `Todo (2/5)`), and epics/sprints
+  only appear when they contain a match. Press Enter to keep the filter or Esc to
+  clear it.
+- **Status / priority filter** — click the filter icon (or run
+  **Backlog: Filter by Status/Priority**) for a multi-select picker of statuses
+  and priorities. Both filters compose with the text search, status groups
+  outside the selection are hidden, and the tree narrows live.
+- **Clear filters** — a **Backlog: Clear Filters** button appears in the view
+  title whenever any filter (text, status, or priority) is active.
 - **Live refresh** — the view re-parses automatically when anything under
   `.backlog/` changes (create/edit/delete), debounced. A manual **Backlog: Refresh**
   command is also available.
@@ -109,6 +120,9 @@ Parser behavior mirrors the Go implementation:
 | Command | Description |
 | --- | --- |
 | `Backlog: Refresh` | Re-parse the `.backlog` folder |
+| `Backlog: Search Tasks` | Open the tree-search box (filter by ID, summary, label) |
+| `Backlog: Filter by Status/Priority` | Multi-select picker to narrow the tree by state |
+| `Backlog: Clear Filters` | Remove the active text, status, and priority filters |
 | `Backlog: Open Detail View` | Open the parsed detail panel for the selected item |
 | `Backlog: Open Task File` | Open the source markdown file for the selected item |
 | `Backlog: Open Dashboard` | Open `.backlog/backlog.md` |

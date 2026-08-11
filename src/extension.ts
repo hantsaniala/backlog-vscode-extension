@@ -8,7 +8,13 @@ import { findBacklogRoot, loadBacklog, statusCounts, taskByID } from "./parser";
 import {
   Backlog,
   Epic,
+  PRIORITY_LABELS,
+  PRIORITY_ORDER,
+  Priority,
   Sprint,
+  STATUS_LABELS,
+  STATUS_ORDER,
+  Status,
   Task,
 } from "./types";
 
@@ -38,9 +44,22 @@ export function activate(extensionContext: vscode.ExtensionContext): void {
   statusBar.command = "backlog.tree.focus";
   context.subscriptions.push(statusBar);
 
+  updateFilterContext();
+
   context.subscriptions.push(
     vscode.commands.registerCommand("backlog.refresh", () => {
       void reload();
+    }),
+    vscode.commands.registerCommand("backlog.search", () => {
+      void startSearch();
+    }),
+    vscode.commands.registerCommand("backlog.filterState", () => {
+      void startStateFilter();
+    }),
+    vscode.commands.registerCommand("backlog.clearFilter", () => {
+      treeProvider.clearAllFilters();
+      updateFilterContext();
+      refreshMessage();
     }),
     vscode.commands.registerCommand("backlog.openDetail", (id?: unknown) => {
       void openDetail(id);
@@ -106,7 +125,7 @@ async function reload(): Promise<void> {
     const backlog = loadBacklog(found.root);
     currentRoot = found.root;
     treeProvider.setBacklog(backlog);
-    treeView.message = undefined;
+    treeView.message = searchMessage();
 
     const counts = statusCounts(backlog.allTasks);
     statusBar.text = `$(checklist) Backlog — Todo ${counts.todo} · In Progress ${counts["in-progress"]} · Done ${counts.done}`;
@@ -144,6 +163,124 @@ function resolveItem(arg: unknown): BacklogItem | undefined {
 
 function findSprint(backlog: Backlog, id: string): Sprint | undefined {
   return backlog.current.sprints.find((s) => s.id === id || s.name === id);
+}
+
+/**
+ * Message for the view header while any filter is active: undefined when
+ * there is something to show, or a "no tasks match" hint.
+ */
+function searchMessage(): string | undefined {
+  const backlog = treeProvider.getBacklog();
+  if (!backlog) return undefined;
+  if (!treeProvider.hasActiveFilter()) return undefined;
+  if (treeProvider.visibleTaskCount() > 0) return undefined;
+  const text = treeProvider.getFilter().trim();
+  return text !== ""
+    ? `No tasks match "${text}"`
+    : "No tasks match the selected status/priority filters";
+}
+
+/** Set the view-header message: filter hint, empty state, or nothing. */
+function refreshMessage(): void {
+  treeView.message = treeProvider.getBacklog() ? searchMessage() : NO_BACKLOG_MESSAGE;
+}
+
+/** Keep the `backlog.filterActive` context key in sync with the filters. */
+function updateFilterContext(): void {
+  void vscode.commands.executeCommand(
+    "setContext",
+    "backlog.filterActive",
+    treeProvider.hasActiveFilter()
+  );
+}
+
+async function startSearch(): Promise<void> {
+  const backlog = treeProvider.getBacklog();
+  if (!backlog) {
+    void vscode.window.showInformationMessage(
+      "No .backlog folder found in this workspace."
+    );
+    return;
+  }
+
+  const input = vscode.window.createInputBox();
+  input.title = "Backlog Search";
+  input.placeholder =
+    "Filter tasks by ID, summary, or label — Enter to keep, Esc to clear";
+  input.value = treeProvider.getFilter();
+  input.ignoreFocusOut = true; // keep live-filtering while the box is open
+
+  let keepFilter = false;
+  input.onDidChangeValue((value) => {
+    treeProvider.setFilter(value);
+    updateFilterContext();
+    treeView.message = searchMessage();
+  });
+  input.onDidAccept(() => {
+    keepFilter = true;
+    input.dispose();
+  });
+  input.onDidHide(() => {
+    if (keepFilter) return; // accepted — filter stays
+    treeProvider.clearFilter();
+    updateFilterContext();
+    refreshMessage();
+  });
+  input.show();
+}
+
+async function startStateFilter(): Promise<void> {
+  const backlog = treeProvider.getBacklog();
+  if (!backlog) {
+    void vscode.window.showInformationMessage(
+      "No .backlog folder found in this workspace."
+    );
+    return;
+  }
+
+  const currentStatuses = new Set(treeProvider.getStatuses());
+  const currentPriorities = new Set(treeProvider.getPriorities());
+
+  const picker = vscode.window.createQuickPick<vscode.QuickPickItem>();
+  picker.title = "Backlog Filter — Status / Priority";
+  picker.placeholder = "Toggle statuses and priorities to narrow the tree";
+  picker.canSelectMany = true;
+  picker.matchOnDescription = true;
+  picker.ignoreFocusOut = true; // keep live-filtering while the picker is open
+
+  const statusItems: vscode.QuickPickItem[] = STATUS_ORDER.map((s) => ({
+    label: STATUS_LABELS[s],
+    description: `status: ${s}`,
+    picked: currentStatuses.has(s),
+  }));
+  const priorityItems: vscode.QuickPickItem[] = PRIORITY_ORDER.map((p) => ({
+    label: PRIORITY_LABELS[p],
+    description: `priority: ${p}`,
+    picked: currentPriorities.has(p),
+  }));
+
+  picker.items = [
+    { label: "Status", kind: vscode.QuickPickItemKind.Separator },
+    ...statusItems,
+    { label: "Priority", kind: vscode.QuickPickItemKind.Separator },
+    ...priorityItems,
+  ];
+
+  picker.onDidChangeSelection((selected) => {
+    const statuses: Status[] = selected
+      .filter((i) => i.description?.startsWith("status: "))
+      .map((i) => i.description!.slice("status: ".length) as Status);
+    const priorities: Priority[] = selected
+      .filter((i) => i.description?.startsWith("priority: "))
+      .map((i) => i.description!.slice("priority: ".length) as Priority);
+    treeProvider.setStateFilter(statuses, priorities);
+    updateFilterContext();
+    treeView.message = searchMessage();
+  });
+  picker.onDidAccept(() => picker.dispose());
+  picker.onDidHide(() => picker.dispose());
+
+  picker.show();
 }
 
 async function openDetail(id?: unknown): Promise<void> {
