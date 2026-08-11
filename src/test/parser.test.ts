@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import {
   extractSection,
   extractSummary,
+  filterTasks,
   findBacklogRoot,
   loadBacklog,
   loadProject,
@@ -15,6 +16,7 @@ import {
   splitFrontmatter,
   statusCounts,
   statusScore,
+  taskPassesStateFilter,
   tasksBySprint,
   tasksByStatus,
   validStoryPoints,
@@ -200,6 +202,63 @@ describe("findBacklogRoot", () => {
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
+  });
+});
+
+describe("task filtering (tree search)", () => {
+  test("matches by id, summary, or label, case-insensitively", () => {
+    const backlog = loadBacklog(BACKLOG_ROOT);
+    expect(filterTasks(backlog.allTasks, "FE-BUG").map((t) => t.id)).toEqual([
+      "FE-BUG-001",
+    ]);
+    expect(filterTasks(backlog.allTasks, "vim motion").map((t) => t.id)).toEqual([
+      "FE-TASK-005",
+    ]);
+    const byLabel = filterTasks(backlog.allTasks, "neovim").map((t) => t.id);
+    expect(byLabel).toContain("FE-TASK-001"); // label "neovim"
+    expect(byLabel).toContain("FE-TASK-002"); // label "neovim-integration"
+    expect(filterTasks(backlog.allTasks, "VIM").length).toBeGreaterThan(0);
+  });
+
+  test("empty or whitespace filter matches everything", () => {
+    const backlog = loadBacklog(BACKLOG_ROOT);
+    expect(filterTasks(backlog.allTasks, "")).toHaveLength(backlog.allTasks.length);
+    expect(filterTasks(backlog.allTasks, "   ")).toHaveLength(backlog.allTasks.length);
+  });
+
+  test("no match returns an empty list", () => {
+    const backlog = loadBacklog(BACKLOG_ROOT);
+    expect(filterTasks(backlog.allTasks, "zzz-nonexistent")).toEqual([]);
+  });
+});
+
+describe("state filtering (status/priority)", () => {
+  test("empty constraints match everything", () => {
+    const backlog = loadBacklog(BACKLOG_ROOT);
+    expect(backlog.allTasks.every((t) => taskPassesStateFilter(t, [], []))).toBe(true);
+  });
+
+  test("filters by status", () => {
+    const backlog = loadBacklog(BACKLOG_ROOT);
+    const todo = backlog.allTasks.filter((t) => taskPassesStateFilter(t, ["todo"], []));
+    expect(todo).toHaveLength(5);
+    expect(todo.every((t) => t.status === "todo")).toBe(true);
+  });
+
+  test("filters by priority", () => {
+    const backlog = loadBacklog(BACKLOG_ROOT);
+    const high = backlog.allTasks.filter((t) => taskPassesStateFilter(t, [], ["high"]));
+    expect(high).toHaveLength(4);
+    expect(high.every((t) => t.priority === "high")).toBe(true);
+  });
+
+  test("combines status and priority", () => {
+    const backlog = loadBacklog(BACKLOG_ROOT);
+    const result = backlog.allTasks
+      .filter((t) => taskPassesStateFilter(t, ["todo"], ["high"]))
+      .map((t) => t.id)
+      .sort();
+    expect(result).toEqual(["FE-STORY-001", "FE-TASK-005"]);
   });
 });
 
