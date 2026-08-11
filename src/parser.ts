@@ -408,6 +408,37 @@ export function tasksBySprint(tasks: Task[], sprintName: string): Task[] {
     .sort((a, b) => priorityScore(a.priority) - priorityScore(b.priority) || a.id.localeCompare(b.id));
 }
 
+/**
+ * Tree-search filter. Matches a task when the (case-insensitive) filter
+ * string appears in its id, its one-line summary, or any of its labels.
+ */
+export function taskMatchesFilter(task: Task, filter: string): boolean {
+  const f = filter.trim().toLowerCase();
+  if (f === "") return true;
+  if (task.id.toLowerCase().includes(f)) return true;
+  if (task.summary.toLowerCase().includes(f)) return true;
+  return task.labels.some((label) => label.toLowerCase().includes(f));
+}
+
+/** Filter tasks, preserving order. An empty/whitespace filter matches all. */
+export function filterTasks(tasks: Task[], filter: string): Task[] {
+  return tasks.filter((t) => taskMatchesFilter(t, filter));
+}
+
+/**
+ * State filter for the tree: narrows tasks by status and/or priority.
+ * Empty arrays mean "no constraint" for that dimension.
+ */
+export function taskPassesStateFilter(
+  task: Task,
+  statuses: Status[],
+  priorities: Priority[]
+): boolean {
+  if (statuses.length > 0 && !statuses.includes(task.status)) return false;
+  if (priorities.length > 0 && !priorities.includes(task.priority)) return false;
+  return true;
+}
+
 export function taskByID(tasks: Task[], epics: Map<string, Epic>, id: string): Task | Epic | undefined {
   const found = tasks.find((t) => t.id === id);
   if (found) return found;
