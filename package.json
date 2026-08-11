@@ -49,6 +49,24 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "backlog.search",
+        "title": "Search Tasks",
+        "category": "Backlog",
+        "icon": "$(search)"
+      },
+      {
+        "command": "backlog.filterState",
+        "title": "Filter by Status/Priority",
+        "category": "Backlog",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "backlog.clearFilter",
+        "title": "Clear Filters",
+        "category": "Backlog",
+        "icon": "$(close)"
+      },
+      {
         "command": "backlog.openDetail",
         "title": "Open Detail View",
         "category": "Backlog"
@@ -70,6 +88,27 @@
           "command": "backlog.refresh",
           "when": "view == backlog.tree",
           "group": "navigation@0"
+        },
+        {
+          "command": "backlog.search",
+          "when": "view == backlog.tree",
+          "group": "navigation@1"
+        },
+        {
+          "command": "backlog.filterState",
+          "when": "view == backlog.tree",
+          "group": "navigation@2"
+        },
+        {
+          "command": "backlog.clearFilter",
+          "when": "view == backlog.tree && backlog.filterActive",
+          "group": "navigation@3"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "backlog.clearFilter",
+          "when": "backlog.filterActive"
         }
       ],
       "view/item/context": [
