@@ -1,0 +1,15 @@
+.vscode/**
+.vscode-test/**
+src/**
+preview/**
+test/**
+node_modules/**
+.gitignore
+.git/**
+bun.lock
+bunfig.toml
+**/*.tsbuildinfo
+esbuild.js
+tsconfig.json
+.vscodeignore
+**/*.vsix
