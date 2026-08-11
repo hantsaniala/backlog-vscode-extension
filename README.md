@@ -139,6 +139,17 @@ Package a `.vsix`:
 bun run package
 ```
 
+### Browser preview
+
+Since an extension has no browser UI, this repo ships a small preview server that
+renders the **exact output of the shared parser** against the sample fixture:
+
+```bash
+bun run build        # generates preview/parser.cjs
+bun run preview      # serves on 0.0.0.0:$PORT (default 4173)
+bun run preview:smoke
+```
+
 ## License
 
 MIT
