@@ -134,6 +134,7 @@
     "preview": "node preview/server.mjs",
     "preview:smoke": "node preview/smoke.mjs",
     "package": "vsce package --no-dependencies --allow-missing-repository",
+    "push:github": "sh ./scripts/push.sh",
     "vscode:prepublish": "node esbuild.js"
   },
   "devDependencies": {

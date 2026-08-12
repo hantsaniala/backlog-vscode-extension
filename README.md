@@ -153,6 +153,20 @@ Package a `.vsix`:
 bun run package
 ```
 
+### GitHub
+
+The repository lives at `github.com/hantsaniala/backlog-vscode-extension`.
+Push `develop` and `main` with:
+
+```bash
+bun run push:github          # or: sh ./scripts/push.sh
+```
+
+The script uses `GITHUB_TOKEN` (a personal access token with `repo` scope,
+pasted into the workspace Keys tab) when it is present, and never writes the
+token into `.git/config` — it is injected into a one-off HTTPS push URL only.
+Without a token it falls back to git's normal credential helper.
+
 ### Browser preview
 
 Since an extension has no browser UI, this repo ships a small preview server that
